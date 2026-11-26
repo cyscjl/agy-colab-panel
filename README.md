@@ -39,3 +39,7 @@ git clone https://github.com/cyscjl/agy-colab-panel.git "$env:USERPROFILE\.gemin
 ```text
 %USERPROFILE%\.gemini\antigravity\sidecar_data\agy-colab-panel\colab\logs\sidecar.log
 ```
+
+## 协议与链接
+- **开源协议**：[MIT License](LICENSE)
+- **友情链接**：[LINUX DO](https://linux.do/) - 新的理想型社区
