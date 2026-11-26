@@ -27,10 +27,10 @@ git clone https://github.com/cyscjl/agy-colab-panel.git "$env:USERPROFILE\.gemin
 3. 打开任意对话窗口右侧的 **概览** 面板，即可直接在底部看到 **Colab 算力** 区块（也可在右上角 **⋮ → Extensions → Colab 算力面板** 打开独立面板）。
 
 ## 首次 OAuth 凭证配置
-1. 前往 Google Cloud Console，选择或新建一个项目，在 **API 和服务 → 库** 中搜索并启用 **Colab API**（`colaboratory.googleapis.com`）。
-2. 在 **OAuth 同意屏幕** 添加你自己的 Google 邮箱为测试用户。
-3. 在 **凭证 → 创建凭证 → OAuth 客户端 ID** 中选择 **桌面应用（Desktop app）** 并下载 JSON。
-4. 在右侧面板点击右上角 **配置**，把下载的 `client_secret.json` 全文粘贴保存（或直接将文件命名为 `client_secret.json` 放进 `%USERPROFILE%\.gemini\config\plugins\colab-panel\`），随后点击 **使用 Google 账号登录** 即可。
+1. 前往 [Google Cloud Console](https://console.cloud.google.com/) 选择或[新建一个项目](https://console.cloud.google.com/projectcreate)，随后直达 [**启用 Colab API (`colaboratory.googleapis.com`)**](https://console.cloud.google.com/apis/library/colaboratory.googleapis.com) 页面并点击 **启用（Enable）**（也可在 [API 库](https://console.cloud.google.com/apis/library) 中搜索 `colaboratory`）。
+2. 打开 [**OAuth 同意屏幕（目标受众 / 测试用户）**](https://console.cloud.google.com/apis/credentials/consent)（用户类型选择 **外部 External**），在 **测试用户（Test users）** 中添加你自己的 Google 邮箱。
+3. 打开 [**创建 OAuth 客户端 ID**](https://console.cloud.google.com/apis/credentials/oauthclient)（或在 [凭证页面](https://console.cloud.google.com/apis/credentials) 点击「创建凭证 → OAuth 客户端 ID」），应用类型选择 **桌面应用（Desktop app）**，创建后点击 **下载 JSON**（即 `client_secret.json`）。
+4. 在右侧面板点击右上角 **配置**，把下载的 `client_secret.json` 全文粘贴保存（或直接将文件命名为 `client_secret.json` 放进 `%USERPROFILE%\.gemini\config\plugins\colab-panel\`），随后点击 **使用 Google 账号登录** 即可（只需登录一次，即可同时显示订阅等级、剩余 CU 余额与实例状态）。
 
 ## 调试日志
 如果插件未启动或报错，可查看 Antigravity 的 Sidecar 运行日志：

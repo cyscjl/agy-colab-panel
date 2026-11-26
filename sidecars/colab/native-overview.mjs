@@ -100,7 +100,7 @@ function connectCdp(url) {
 }
 
 function buildInjectedScript(origin) {
-  const version = '1.8.1';
+  const version = '1.8.2';
   return `(() => {
   if (location.origin !== ${JSON.stringify(origin)} || window !== window.top) return;
   if (globalThis.__colabOverviewPanel?.version === ${JSON.stringify(version)} && globalThis.__colabOverviewPanel?.active) return;
@@ -530,6 +530,14 @@ function buildInjectedScript(origin) {
           <div class="cb-row">
             <span style="font-weight:500;font-size:11px;">OAuth 凭证 (\${escapeHtml(state.hasClientId ? state.clientIdPreview : '未配置')})</span>
             \${state.authenticated ? \`<button type="button" class="cb-btn cb-btn-danger" data-action="logout">退出</button>\` : ''}
+          </div>
+          <div class="cb-muted" style="font-size:10.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span>申请直达:</span>
+            <a href="https://console.cloud.google.com/apis/library/colaboratory.googleapis.com" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;">1.启用API</a>
+            <span>·</span>
+            <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;">2.测试用户</a>
+            <span>·</span>
+            <a href="https://console.cloud.google.com/apis/credentials/oauthclient" target="_blank" rel="noopener noreferrer" style="color:var(--primary);text-decoration:none;">3.桌面凭证</a>
           </div>
           <textarea class="cb-textarea" data-field="secret-json" placeholder="粘贴 client_secret.json 全文"></textarea>
           <input class="cb-input" data-field="project-id" type="text" placeholder="Quota Project ID (可选)" value="\${escapeHtml(state.quotaProjectId)}" />
