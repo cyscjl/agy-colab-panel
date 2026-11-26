@@ -14,7 +14,7 @@ const PLUGIN_ROOT = path.resolve(__dirname, '..', '..');
 
 const DATA_DIR =
   process.env.ANTIGRAVITY_EXECUTABLE_DATA_DIR ||
-  path.join(os.homedir(), '.gemini', 'antigravity', 'plugin_data', 'colab-panel');
+  path.join(os.homedir(), '.gemini', 'antigravity', 'plugin_data', 'agy-colab-panel');
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 

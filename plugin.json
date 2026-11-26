@@ -1,6 +1,6 @@
 {
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
-  "name": "colab-panel",
+  "name": "agy-colab-panel",
   "displayName": "Colab 算力面板",
   "version": "1.0.0",
   "description": "在 Antigravity 右侧「概览」面板通过 OAuth 2.0 查看 Google Colab 订阅与精确剩余 CU 余额、监控实例 RAM/GPU 占用并自动保活及排队抢算力。",

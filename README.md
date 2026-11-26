@@ -11,31 +11,31 @@
 
 ## 安装方式
 
-### 方式一：Git 克隆（推荐）
-在 PowerShell 中执行：
-```powershell
-git clone https://github.com/cyscjl/agy-colab-panel.git "$env:USERPROFILE\.gemini\config\plugins\colab-panel"
+### 方式一：下载 Release 压缩包（最简单）
+前往 [Releases 页面](https://github.com/cyscjl/agy-colab-panel/releases/latest) 下载 `agy-colab-panel.zip`，解压后将里面的 `agy-colab-panel` 文件夹复制到：
+```text
+%USERPROFILE%\.gemini\config\plugins\agy-colab-panel
 ```
 
-### 方式二：手动下载放置
-下载仓库压缩包解压后，将文件夹重命名为 `colab-panel` 并复制到：
-```text
-%USERPROFILE%\.gemini\config\plugins\colab-panel
+### 方式二：Git 克隆
+在 PowerShell 中执行：
+```powershell
+git clone https://github.com/cyscjl/agy-colab-panel.git "$env:USERPROFILE\.gemini\config\plugins\agy-colab-panel"
 ```
 
 ## 启用与打开
 1. **重启 Antigravity**，让客户端扫描新插件目录。
-2. 点击左侧栏 **Customizations → Installed**，确认 **Colab 算力面板** 已开启。
+2. 点击左侧栏 **Customizations → Installed**，确认 **Colab 算力面板**（`agy-colab-panel`）已开启。
 3. 打开任意对话窗口右侧的 **概览** 面板，即可直接在底部看到 **Colab 算力** 区块（也可在右上角 **⋮ → Extensions → Colab 算力面板** 打开独立面板）。
 
 ## 首次 OAuth 凭证配置
 1. 前往 [Google Cloud Console](https://console.cloud.google.com/) 选择或[新建一个项目](https://console.cloud.google.com/projectcreate)，随后直达 [**启用 Colab API (`colaboratory.googleapis.com`)**](https://console.cloud.google.com/apis/library/colaboratory.googleapis.com) 页面并点击 **启用（Enable）**（也可在 [API 库](https://console.cloud.google.com/apis/library) 中搜索 `colaboratory`）。
 2. 打开 [**OAuth 同意屏幕（目标受众 / 测试用户）**](https://console.cloud.google.com/apis/credentials/consent)（用户类型选择 **外部 External**），在 **测试用户（Test users）** 中添加你自己的 Google 邮箱。
 3. 打开 [**创建 OAuth 客户端 ID**](https://console.cloud.google.com/apis/credentials/oauthclient)（或在 [凭证页面](https://console.cloud.google.com/apis/credentials) 点击「创建凭证 → OAuth 客户端 ID」），应用类型选择 **桌面应用（Desktop app）**，创建后点击 **下载 JSON**（即 `client_secret.json`）。
-4. 在右侧面板点击右上角 **配置**，把下载的 `client_secret.json` 全文粘贴保存（或直接将文件命名为 `client_secret.json` 放进 `%USERPROFILE%\.gemini\config\plugins\colab-panel\`），随后点击 **使用 Google 账号登录** 即可（只需登录一次，即可同时显示订阅等级、剩余 CU 余额与实例状态）。
+4. 在右侧面板点击右上角 **配置**，把下载的 `client_secret.json` 全文粘贴保存（或直接将文件命名为 `client_secret.json` 放进 `%USERPROFILE%\.gemini\config\plugins\agy-colab-panel\`），随后点击 **使用 Google 账号登录** 即可（只需登录一次，即可同时显示订阅等级、剩余 CU 余额与实例状态）。
 
 ## 调试日志
 如果插件未启动或报错，可查看 Antigravity 的 Sidecar 运行日志：
 ```text
-%USERPROFILE%\.gemini\antigravity\sidecar_data\colab-panel\colab\logs\sidecar.log
+%USERPROFILE%\.gemini\antigravity\sidecar_data\agy-colab-panel\colab\logs\sidecar.log
 ```
