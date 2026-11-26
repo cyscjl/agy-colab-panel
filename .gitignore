@@ -1,0 +1,7 @@
+client_secret.json
+token.json
+config.json
+node_modules/
+.DS_Store
+Thumbs.db
+*.log

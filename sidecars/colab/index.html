@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Colab 算力面板</title>
+  <script src="/preload.js"></script>
+  <style>
+    :root {
+      /* 自动继承 Antigravity preload.js 注入的浅/深色主题变量，未注入时回退纯黑极简风 */
+      --ag-bg: var(--background, #000000);
+      --ag-surface: var(--card, #0b0b0d);
+      --ag-elevated: var(--secondary, #131317);
+      --ag-hover: var(--accent, #1b1b21);
+      --ag-border: var(--border, rgba(255, 255, 255, 0.1));
+      --ag-fg: var(--foreground, #f4f4f6);
+      --ag-muted: var(--muted-foreground, #8b8b94);
+      --ag-green: #34d399;
+      --ag-green-bg: rgba(52, 211, 153, 0.14);
+      --ag-amber: #fbbf24;
+      --ag-amber-bg: rgba(251, 191, 36, 0.14);
+      --ag-red: #f87171;
+      --ag-red-bg: rgba(248, 113, 113, 0.14);
+      --radius-pill: 999px;
+      --radius-card: 16px;
+      --radius-sm: 10px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--ag-bg);
+      color: var(--ag-fg);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+      padding: 14px 12px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ag-muted);
+      flex-shrink: 0;
+    }
+    .dot.online { background: var(--ag-green); box-shadow: 0 0 8px rgba(52, 211, 153, 0.5); }
+    .dot.queuing {
+      background: var(--ag-amber);
+      box-shadow: 0 0 8px rgba(251, 191, 36, 0.55);
+      animation: pulse 1.3s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+    .actions { display: flex; gap: 6px; }
+
+    .chip-btn {
+      background: var(--ag-surface);
+      border: 1px solid var(--ag-border);
+      color: var(--ag-muted);
+      height: 28px;
+      padding: 0 10px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .chip-btn:hover { background: var(--ag-hover); color: var(--ag-fg); }
+    .chip-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .section { display: flex; flex-direction: column; gap: 8px; }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+    }
+    .section-title { font-size: 12.5px; font-weight: 500; color: var(--ag-fg); }
+    .section-meta { font-size: 11px; color: var(--ag-muted); font-family: var(--font-mono); }
+
+    /* 反重力风格胶囊行 */
+    .pill-row {
+      background: var(--ag-surface);
+      border: 1px solid var(--ag-border);
+      border-radius: var(--radius-pill);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .pill-val { color: var(--ag-muted); font-family: var(--font-mono); font-size: 12px; }
+
+    .card {
+      background: var(--ag-surface);
+      border: 1px solid var(--ag-border);
+      border-radius: var(--radius-card);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      background: var(--ag-elevated);
+      border: 1px solid var(--ag-border);
+      color: var(--ag-muted);
+    }
+    .badge.green { background: var(--ag-green-bg); border-color: rgba(52, 211, 153, 0.3); color: var(--ag-green); }
+    .badge.amber { background: var(--ag-amber-bg); border-color: rgba(251, 191, 36, 0.3); color: var(--ag-amber); }
+    .badge.red { background: var(--ag-red-bg); border-color: rgba(248, 113, 113, 0.3); color: var(--ag-red); }
+
+    .btn {
+      width: 100%;
+      height: 36px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--ag-border);
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .btn:hover:not(:disabled) { opacity: 0.9; }
+    .btn-primary { background: var(--ag-fg); color: var(--ag-bg); border-color: var(--ag-fg); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-danger { background: var(--ag-red-bg); color: var(--ag-red); border-color: rgba(248, 113, 113, 0.3); }
+    .btn-ghost { background: var(--ag-elevated); color: var(--ag-fg); }
+    .btn-sm { width: auto; height: 26px; padding: 0 10px; font-size: 11.5px; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 11.5px; color: var(--ag-muted); }
+
+    input, textarea {
+      width: 100%;
+      background: var(--ag-elevated);
+      border: 1px solid var(--ag-border);
+      border-radius: var(--radius-sm);
+      color: var(--ag-fg);
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      outline: none;
+    }
+    textarea { min-height: 74px; resize: vertical; }
+
+    .notice {
+      background: var(--ag-elevated);
+      border: 1px solid var(--ag-border);
+      border-radius: var(--radius-sm);
+      padding: 9px 11px;
+      font-size: 12px;
+      color: var(--ag-muted);
+      word-break: break-word;
+    }
+    .notice.error {
+      background: var(--ag-red-bg);
+      border-color: rgba(248, 113, 113, 0.28);
+      color: var(--ag-red);
+    }
+
+    .runtime-card {
+      background: var(--ag-elevated);
+      border: 1px solid var(--ag-border);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .rt-title { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; }
+    .rt-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ag-muted); word-break: break-all; }
+    .rt-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+
+    .spec-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+    .spec-chip {
+      background: var(--ag-elevated);
+      border: 1px solid var(--ag-border);
+      border-radius: 12px;
+      padding: 9px 10px;
+      text-align: left;
+      cursor: pointer;
+      color: var(--ag-fg);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .spec-chip:hover:not(.disabled) { background: var(--ag-hover); }
+    .spec-chip.selected { border-color: var(--ag-fg); background: var(--ag-hover); }
+    .spec-chip.disabled { opacity: 0.38; cursor: not-allowed; }
+    .spec-name { font-size: 12.5px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+    .spec-sub { font-size: 11px; color: var(--ag-muted); font-family: var(--font-mono); }
+
+    .log-box {
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid var(--ag-border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      max-height: 145px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .log-line { display: flex; gap: 7px; color: var(--ag-muted); }
+    .log-line.success { color: var(--ag-green); }
+    .log-line.warn { color: var(--ag-amber); }
+    .log-line.error { color: var(--ag-red); }
+    .log-time { opacity: 0.65; flex-shrink: 0; }
+
+    .empty { text-align: center; color: var(--ag-muted); padding: 12px 0; font-size: 12px; }
+    .hidden { display: none !important; }
+
+    .toast {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ag-elevated);
+      border: 1px solid var(--ag-border);
+      color: var(--ag-fg);
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 99;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <span id="statusDot" class="dot"></span>
+        <span>Colab 算力面板</span>
+      </div>
+      <div class="actions">
+        <button id="refreshBtn" class="chip-btn" onclick="refreshOverview()">刷新</button>
+        <button class="chip-btn" onclick="toggleSettings()">配置</button>
+      </div>
+    </div>
+
+    <!-- OAuth 与项目 ID 配置抽屉 -->
+    <div id="settingsBox" class="card hidden">
+      <div class="section-head" style="padding:0;">
+        <span class="section-title">OAuth 凭证配置</span>
+        <span id="clientPreview" class="section-meta">未配置</span>
+      </div>
+      <div class="field">
+        <label>粘贴 client_secret.json 全文（首次配置）</label>
+        <textarea id="secretJsonInput" placeholder='{"installed":{"client_id":"...","project_id":"...","client_secret":"..."}}'></textarea>
+      </div>
+      <div class="field">
+        <label>Google Cloud Quota Project ID（自动读取或手填）</label>
+        <input id="projectIdInput" type="text" placeholder="例如 my-colab-project-123" />
+      </div>
+      <div class="row">
+        <button class="btn btn-primary btn-sm" onclick="saveConfig()">保存配置</button>
+        <button id="logoutBtn" class="btn btn-danger btn-sm hidden" onclick="logout()">退出登录</button>
+      </div>
+    </div>
+
+    <div id="errorBox" class="notice error hidden"></div>
+
+    <!-- 未登录引导 -->
+    <div id="authCard" class="card hidden">
+      <div class="section-title">Google OAuth 2.0 授权</div>
+      <div id="authTip" class="notice">
+        将通过官方 OAuth 2.0 授权访问 Google Colab REST API，凭证仅保存在本地插件数据目录。
+      </div>
+      <button id="loginBtn" class="btn btn-primary" onclick="startLogin()">使用 Google 账号登录</button>
+      <div id="manualAuthWrap" class="notice hidden">
+        如果浏览器未自动弹出，请点此复制授权链接：
+        <div style="margin-top:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="copyAuthUrl()">复制授权链接</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主功能区 -->
+    <div id="mainArea" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
+      <!-- 订阅状态 -->
+      <div class="section">
+        <div class="section-head">
+          <span class="section-title">订阅与额度</span>
+          <span class="section-meta">v1beta</span>
+        </div>
+        <div class="pill-row">
+          <span>当前订阅等级</span>
+          <span id="tierVal" class="pill-val">-</span>
+        </div>
+        <div id="extraSubRows" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <div id="subNote" class="notice" style="font-size:11.5px;">
+          若未显示剩余 CU 余额，可点击重新授权以补充 userinfo.email 权限。
+        </div>
+      </div>
+
+      <!-- 运行中实例 -->
+      <div class="section">
+        <div class="section-head">
+          <span class="section-title">运行中实例</span>
+          <span id="rtCount" class="section-meta">0 台</span>
+        </div>
+        <div id="rtList" class="card">
+          <div class="empty">当前无运行中实例</div>
+        </div>
+      </div>
+
+      <!-- 选配与排队抢算力 -->
+      <div class="section">
+        <div class="section-head">
+          <span class="section-title">选配并排队抢算力</span>
+          <span id="queueBadge" class="badge">空闲</span>
+        </div>
+        <div class="card">
+          <div id="specGrid" class="spec-grid">
+            <div class="empty" style="grid-column:span 2;">加载规格中...</div>
+          </div>
+
+          <div class="row">
+            <span style="font-size:12px;color:var(--ag-muted);">轮询间隔（秒，建议 ≥ 20）</span>
+            <input id="intervalInput" type="number" min="15" max="300" value="30" style="width:74px;text-align:center;" />
+          </div>
+
+          <button id="startBtn" class="btn btn-primary" onclick="startQueue()">开始排队抢算力</button>
+          <button id="stopBtn" class="btn btn-danger hidden" onclick="stopQueue()">停止排队</button>
+
+          <div id="queueRow" class="pill-row hidden" style="padding:8px 12px;">
+            <span id="queueText" style="font-size:12px;">空闲</span>
+            <span id="queueAttempts" class="pill-val">第 0 次</span>
+          </div>
+
+          <div id="logBox" class="log-box hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let allSpecs = [];
+    let currentRuntimes = [];
+    let selectedKey = null;
+    let lastAuthUrl = '';
+    let queueTimer = null;
+    let wasRunning = false;
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2200);
+    }
+
+    function setError(msg) {
+      const el = document.getElementById('errorBox');
+      if (!msg) {
+        el.classList.add('hidden');
+        el.textContent = '';
+      } else {
+        el.textContent = msg;
+        el.classList.remove('hidden');
+      }
+    }
+
+    function toggleSettings() {
+      document.getElementById('settingsBox').classList.toggle('hidden');
+    }
+
+    async function callApi(path, body = {}) {
+      const fetcher =
+        window.sidecar && typeof window.sidecar.fetch === 'function'
+          ? (p, opts) => window.sidecar.fetch(p, opts)
+          : (p, opts) => fetch(p, opts);
+
+      const res = await fetcher(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = res && typeof res.json === 'function' ? await res.json().catch(() => ({})) : res || {};
+      if (res && typeof res.ok === 'boolean' && !res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      if (data && data.ok === false) {
+        throw new Error(data.error || '操作失败');
+      }
+      return data;
+    }
+
+    function playBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(660, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(990, ctx.currentTime + 0.16);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.36);
+      } catch {}
+    }
+
+    function notifyAcquired(spec) {
+      playBeep();
+      const label = spec.accelerator === 'NONE' ? 'CPU' : spec.accelerator;
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Colab 算力已抢到', {
+          body: `已成功分配 ${label} (${spec.shape})`,
+        });
+      }
+      toast(`已成功抢到 ${label}！`);
+    }
+
+    async function syncStatus() {
+      try {
+        const st = await callApi('/api/status');
+        document.getElementById('projectIdInput').value = st.quota_project_id || '';
+        document.getElementById('clientPreview').textContent = st.has_client_id ? st.client_id_preview : '未配置';
+
+        if (!st.has_client_id) {
+          document.getElementById('settingsBox').classList.remove('hidden');
+          document.getElementById('authTip').textContent =
+            '请先在上方「配置」中粘贴从 Google Cloud 下载的桌面端 client_secret.json，再点击登录。';
+          document.getElementById('loginBtn').disabled = true;
+        } else {
+          document.getElementById('loginBtn').disabled = st.login_state === 'pending';
+          document.getElementById('loginBtn').textContent =
+            st.login_state === 'pending' ? '等待浏览器完成授权...' : '使用 Google 账号登录';
+        }
+
+        if (st.auth_url) {
+          lastAuthUrl = st.auth_url;
+          document.getElementById('manualAuthWrap').classList.remove('hidden');
+        } else {
+          document.getElementById('manualAuthWrap').classList.add('hidden');
+        }
+
+        if (st.login_error) setError(st.login_error);
+
+        if (st.authenticated) {
+          document.getElementById('authCard').classList.add('hidden');
+          document.getElementById('mainArea').classList.remove('hidden');
+          document.getElementById('logoutBtn').classList.remove('hidden');
+          document.getElementById('statusDot').className = 'dot online';
+          setError('');
+          await refreshOverview();
+          await pollQueue();
+        } else {
+          document.getElementById('authCard').classList.remove('hidden');
+          document.getElementById('mainArea').classList.add('hidden');
+          document.getElementById('logoutBtn').classList.add('hidden');
+          document.getElementById('statusDot').className = 'dot';
+          if (st.login_state === 'pending') {
+            setTimeout(syncStatus, 1800);
+          }
+        }
+      } catch (e) {
+        setError(e.message);
+      }
+    }
+
+    async function saveConfig() {
+      try {
+        const rawJson = document.getElementById('secretJsonInput').value.trim();
+        const projectId = document.getElementById('projectIdInput').value.trim();
+        await callApi('/api/config/save', {
+          raw_secret_json: rawJson,
+          quota_project_id: projectId,
+        });
+        document.getElementById('secretJsonInput').value = '';
+        document.getElementById('settingsBox').classList.add('hidden');
+        toast('配置已保存');
+        await syncStatus();
+      } catch (e) {
+        setError(e.message);
+      }
+    }
+
+    async function startLogin() {
+      try {
+        setError('');
+        const res = await callApi('/api/auth/login');
+        if (res.auth_url) {
+          lastAuthUrl = res.auth_url;
+          document.getElementById('manualAuthWrap').classList.remove('hidden');
+        }
+        document.getElementById('loginBtn').disabled = true;
+        document.getElementById('loginBtn').textContent = '等待浏览器完成授权...';
+        setTimeout(syncStatus, 1800);
+      } catch (e) {
+        setError(e.message);
+      }
+    }
+
+    function copyAuthUrl() {
+      if (!lastAuthUrl) return;
+      navigator.clipboard.writeText(lastAuthUrl).then(() => toast('已复制授权链接'));
+    }
+
+    async function logout() {
+      try {
+        await callApi('/api/auth/logout');
+        clearTimeout(queueTimer);
+        document.getElementById('settingsBox').classList.add('hidden');
+        toast('已退出登录');
+        await syncStatus();
+      } catch (e) {
+        setError(e.message);
+      }
+    }
+
+    function formatTier(rawTier) {
+      const map = {
+        SUBSCRIPTION_TIER_FREE: { text: 'FREE', cls: '' },
+        SUBSCRIPTION_TIER_PRO: { text: 'PRO', cls: 'amber' },
+        SUBSCRIPTION_TIER_PRO_PLUS: { text: 'PRO+', cls: 'green' },
+      };
+      if (map[rawTier]) return map[rawTier];
+      const upper = String(rawTier || '未知').toUpperCase();
+      if (upper.includes('PRO_PLUS') || upper.includes('PRO+')) return { text: upper, cls: 'green' };
+      if (upper.includes('PRO')) return { text: upper, cls: 'amber' };
+      return { text: upper, cls: '' };
+    }
+
+    function formatExpire(isoStr) {
+      if (!isoStr) return '';
+      const diffSec = Math.floor((new Date(isoStr).getTime() - Date.now()) / 1000);
+      if (Number.isNaN(diffSec)) return isoStr;
+      if (diffSec <= 0) return '已过期';
+      const min = Math.floor(diffSec / 60);
+      const sec = diffSec % 60;
+      return `${min}分${sec}秒后刷新`;
+    }
+
+    function renderSubscription(sub, ccuInfo) {
+      const rawTier = sub.tier || sub.subscriptionTier || sub.plan || '';
+      const info = formatTier(rawTier);
+      document.getElementById('tierVal').innerHTML = `<span class="badge ${info.cls}">${escapeHtml(info.text)}</span>`;
+
+      const extraBox = document.getElementById('extraSubRows');
+      extraBox.innerHTML = '';
+
+      const noteEl = document.getElementById('subNote');
+      if (ccuInfo && ccuInfo.ok && ccuInfo.balance !== null && ccuInfo.balance !== undefined) {
+        const balRow = document.createElement('div');
+        balRow.className = 'pill-row';
+        const balNum = Number(ccuInfo.balance);
+        balRow.innerHTML = `<span>剩余算力单元 (CU)</span><span class="pill-val"><span class="badge ${balNum < 10 ? 'amber' : 'green'}">${escapeHtml(balNum.toFixed(2))} CU</span></span>`;
+        extraBox.appendChild(balRow);
+
+        if (ccuInfo.hourly_rate !== null && ccuInfo.hourly_rate !== undefined) {
+          const rateRow = document.createElement('div');
+          rateRow.className = 'pill-row';
+          rateRow.innerHTML = `<span>当前总消耗速率</span><span class="pill-val">${escapeHtml(Number(ccuInfo.hourly_rate).toFixed(2))} CU/h</span>`;
+          extraBox.appendChild(rateRow);
+        }
+        if (noteEl) noteEl.classList.add('hidden');
+      } else if (ccuInfo && ccuInfo.needs_reauth) {
+        if (noteEl) {
+          noteEl.classList.remove('hidden');
+          noteEl.textContent = '当前登录凭证缺少 userinfo.email 权限，请在配置中退出并重新登录一次以显示剩余 CU。';
+        }
+      } else if (noteEl) {
+        noteEl.classList.remove('hidden');
+        noteEl.textContent = ccuInfo && ccuInfo.error ? `剩余 CU 暂不可用：${ccuInfo.error}` : '暂未获取到剩余 CU 余额。';
+      }
+
+      Object.entries(sub).forEach(([k, v]) => {
+        if (['tier', 'subscriptionTier', 'plan', 'name'].includes(k)) return;
+        if (v === null || v === undefined || typeof v === 'object') return;
+        const row = document.createElement('div');
+        row.className = 'pill-row';
+        row.innerHTML = `<span>${escapeHtml(k)}</span><span class="pill-val">${escapeHtml(v)}</span>`;
+        extraBox.appendChild(row);
+      });
+    }
+
+    function renderRuntimes(runtimes) {
+      currentRuntimes = runtimes;
+      const listEl = document.getElementById('rtList');
+      document.getElementById('rtCount').textContent = `${runtimes.length} 台`;
+
+      if (!runtimes.length) {
+        listEl.innerHTML = '<div class="empty">当前无运行中实例</div>';
+        return;
+      }
+
+      listEl.innerHTML = '';
+      runtimes.forEach((rt, idx) => {
+        const spec = rt.runtimeSpec || {};
+        const conn = rt.connectionInfo || {};
+        const name = rt.name || '';
+        const shortId = name.replace(/^runtimes\//, '');
+        const accel = spec.accelerator && spec.accelerator !== 'NONE' ? spec.accelerator : 'CPU';
+        const shape = spec.shape || 'STANDARD';
+        const exp = conn.expireTime ? formatExpire(conn.expireTime) : '';
+
+        const card = document.createElement('div');
+        card.className = 'runtime-card';
+        card.innerHTML = `
+          <div class="row">
+            <div class="rt-title">
+              <span class="dot online"></span>
+              <span>${escapeHtml(accel)}</span>
+              <span class="badge">${escapeHtml(shape)}</span>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="deleteRuntime(${idx})">释放</button>
+          </div>
+          <div class="rt-meta">ID: ${escapeHtml(shortId || '未知')}</div>
+          ${exp ? `<div class="rt-meta">Token: ${escapeHtml(exp)}</div>` : ''}
+          <div class="rt-btns">
+            ${conn.url ? `<button class="btn btn-ghost btn-sm" onclick="copyRuntimeField(${idx}, 'url')">复制 URL</button>` : ''}
+            ${conn.token ? `<button class="btn btn-ghost btn-sm" onclick="copyRuntimeField(${idx}, 'token')">复制 Token</button>` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="sendRuntimeToChat(${idx})">发给当前对话</button>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    function specKey(s) {
+      return `${s.variant}|${s.accelerator}|${s.shape}`;
+    }
+
+    function renderSpecs(specs) {
+      allSpecs = specs;
+      const grid = document.getElementById('specGrid');
+      if (!specs.length) {
+        grid.innerHTML = '<div class="empty" style="grid-column:span 2;">未获取到可用算力规格</div>';
+        return;
+      }
+
+      const sorted = [...specs].sort((a, b) => {
+        if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
+        const aCpu = a.accelerator === 'NONE' ? 1 : 0;
+        const bCpu = b.accelerator === 'NONE' ? 1 : 0;
+        return aCpu - bCpu;
+      });
+
+      if (!selectedKey || !sorted.some((s) => specKey(s) === selectedKey && s.eligible)) {
+        const firstOk = sorted.find((s) => s.eligible);
+        if (firstOk) selectedKey = specKey(firstOk);
+      }
+
+      grid.innerHTML = '';
+      sorted.forEach((s) => {
+        const k = specKey(s);
+        const label = s.accelerator === 'NONE' ? 'CPU' : s.accelerator;
+        const shapeLabel = s.shape === 'HIGHMEM' ? '高内存' : s.shape;
+        const btn = document.createElement('button');
+        btn.className = `spec-chip ${k === selectedKey ? 'selected' : ''} ${!s.eligible ? 'disabled' : ''}`;
+        btn.disabled = !s.eligible;
+        btn.onclick = () => {
+          selectedKey = k;
+          renderSpecs(allSpecs);
+        };
+        btn.innerHTML = `
+          <div class="spec-name">
+            <span>${escapeHtml(label)}</span>
+            ${!s.eligible ? '<span class="badge">无权限</span>' : ''}
+          </div>
+          <div class="spec-sub">${escapeHtml(shapeLabel)} · ${escapeHtml(s.variant)}</div>
+        `;
+        grid.appendChild(btn);
+      });
+    }
+
+    async function refreshOverview() {
+      const btn = document.getElementById('refreshBtn');
+      btn.disabled = true;
+      btn.textContent = '同步中';
+      try {
+        const data = await callApi('/api/overview');
+        renderSubscription(data.subscription || {}, data.ccu_info || null);
+        renderRuntimes(data.runtimes || []);
+        renderSpecs(data.specs || []);
+        if (data.errors && data.errors.length) {
+          setError(data.errors.join(' | '));
+        } else {
+          setError('');
+        }
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '刷新';
+      }
+    }
+
+    async function deleteRuntime(idx) {
+      const rt = currentRuntimes[idx];
+      if (!rt || !rt.name) return;
+      if (!confirm(`确定要释放实例 ${rt.name} 吗？`)) return;
+      try {
+        await callApi('/api/runtime/delete', { name: rt.name });
+        toast('实例已释放');
+        await refreshOverview();
+      } catch (e) {
+        setError('释放失败：' + e.message);
+      }
+    }
+
+    function copyRuntimeField(idx, field) {
+      const rt = currentRuntimes[idx];
+      const val = rt && rt.connectionInfo && rt.connectionInfo[field];
+      if (!val) return;
+      navigator.clipboard.writeText(val).then(() => toast(field === 'url' ? '已复制连接 URL' : '已复制 Proxy Token'));
+    }
+
+    async function sendRuntimeToChat(idx) {
+      const rt = currentRuntimes[idx];
+      if (!rt) return;
+      const spec = rt.runtimeSpec || {};
+      const conn = rt.connectionInfo || {};
+      const accel = spec.accelerator && spec.accelerator !== 'NONE' ? spec.accelerator : 'CPU';
+      const summary = [
+        `我已分配好一个 Google Colab 实例：`,
+        `- 实例名：${rt.name || '未知'}`,
+        `- 算力规格：${accel} (${spec.shape || 'STANDARD'} / ${spec.variant || 'DEFAULT'})`,
+        conn.url ? `- 代理地址：${conn.url}` : null,
+        `接下来请使用该 Colab 运行时执行任务。`,
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      if (window.sidecar && window.sidecar.agent && typeof window.sidecar.agent.sendMessage === 'function') {
+        try {
+          await window.sidecar.agent.sendMessage(summary);
+          toast('已发送到当前对话');
+          return;
+        } catch {}
+      }
+      navigator.clipboard.writeText(summary).then(() => toast('已复制实例信息到剪贴板'));
+    }
+
+    async function startQueue() {
+      const target = allSpecs.find((s) => specKey(s) === selectedKey);
+      if (!target) {
+        toast('请先选择一个可用的算力配置');
+        return;
+      }
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
+      const interval = Math.max(15, Math.min(300, parseInt(document.getElementById('intervalInput').value || '30', 10)));
+      try {
+        setError('');
+        await callApi('/api/queue/start', {
+          variant: target.variant,
+          accelerator: target.accelerator,
+          shape: target.shape,
+          interval,
+        });
+        wasRunning = true;
+        await pollQueue();
+      } catch (e) {
+        setError(e.message);
+      }
+    }
+
+    async function stopQueue() {
+      try {
+        await callApi('/api/queue/stop');
+        await pollQueue();
+      } catch (e) {
+        setError(e.message);
+      }
+    }
+
+    function renderQueue(q) {
+      const badge = document.getElementById('queueBadge');
+      const startBtn = document.getElementById('startBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const row = document.getElementById('queueRow');
+      const logBox = document.getElementById('logBox');
+      const dot = document.getElementById('statusDot');
+
+      if (q.running) {
+        badge.className = 'badge amber';
+        badge.textContent = '排队中';
+        startBtn.classList.add('hidden');
+        stopBtn.classList.remove('hidden');
+        row.classList.remove('hidden');
+        dot.className = 'dot queuing';
+      } else {
+        badge.className = q.acquired_runtime ? 'badge green' : 'badge';
+        badge.textContent = q.acquired_runtime ? '已抢到' : '空闲';
+        startBtn.classList.remove('hidden');
+        stopBtn.classList.add('hidden');
+        if (q.attempts > 0) row.classList.remove('hidden');
+        dot.className = 'dot online';
+      }
+
+      document.getElementById('queueText').textContent = q.status_text || '空闲';
+      document.getElementById('queueAttempts').textContent = `第 ${q.attempts || 0} 次`;
+
+      if (q.logs && q.logs.length) {
+        logBox.classList.remove('hidden');
+        logBox.innerHTML = q.logs
+          .map(
+            (item) =>
+              `<div class="log-line ${escapeHtml(item.level)}"><span class="log-time">${escapeHtml(
+                item.time
+              )}</span><span>${escapeHtml(item.message)}</span></div>`
+          )
+          .join('');
+      }
+
+      if (wasRunning && !q.running && q.acquired_runtime && q.target) {
+        wasRunning = false;
+        notifyAcquired(q.target);
+        refreshOverview();
+      } else if (!q.running) {
+        wasRunning = false;
+      }
+    }
+
+    async function pollQueue() {
+      try {
+        const res = await callApi('/api/queue/status');
+        const q = res.queue || {};
+        renderQueue(q);
+        clearTimeout(queueTimer);
+        if (q.running) {
+          wasRunning = true;
+          queueTimer = setTimeout(pollQueue, 1500);
+        }
+      } catch {}
+    }
+
+    syncStatus();
+    setInterval(() => {
+      if (!document.getElementById('mainArea').classList.contains('hidden')) {
+        refreshOverview();
+      }
+    }, 60000);
+  </script>
+</body>
+</html>
