@@ -2,6 +2,8 @@
 
 基于 Antigravity 2.0 官方 UI Extension（Sidecar）规范编写，无需 Python、无需 `npm install`，直接复用 Antigravity 内置 Node.js 与 `sidecar_sdk`。
 
+![Colab 算力面板界面预览](assets/preview.png)
+
 ## 功能
 - **OAuth 2.0 (PKCE) 一次登录**：安全对接 Google Colab API 与会话后端，一次授权即可同时获取订阅等级、精确剩余算力单元（CU）及运行中实例，Token 自动续期且仅存于本机。
 - **右侧「概览」面板原生内嵌**：直接挂载在对话右侧「概览」卡片底部，实时查看剩余 CU 余额、RAM / GPU 显存与算力利用率、机房地区、运行时长与闲置倒计时，支持自动保活/手动续期及一键释放。
